@@ -9,7 +9,7 @@ const httpServer = createServer(app);
 // Initialize Socket.IO server
 const io = new Server(httpServer, {
   cors: {
-    origin: '*', // Allow all origins for testing
+    origin: '*', // Allow all origins for development
   },
 });
 
@@ -17,11 +17,17 @@ const io = new Server(httpServer, {
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
 
+  // Join a channel
+  socket.on('join-channel', (channel) => {
+    console.log(`${socket.id} joined channel: ${channel}`);
+    socket.join(channel);
+  });
+
   // Handle incoming messages
-  socket.on('chat-message', (message) => {
-    console.log('Message received:', message);
-    // Broadcast the message to all connected clients
-    io.emit('chat message', message);
+  socket.on('chat-message', ({ channel, message }) => {
+    console.log(`Message in ${channel} from ${socket.id}: ${message}`);
+    // Broadcast the message only to the users in the same channel
+    io.to(channel).emit('chat-message', { message, sender: socket.id });
   });
 
   // Handle disconnection
